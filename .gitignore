@@ -8,3 +8,5 @@
 *.pdf
 *.cmxs
 *.cmxa
+*.exe
+!*.ml
