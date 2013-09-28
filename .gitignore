@@ -5,5 +5,6 @@
 *.a
 *.o
 *.cmx
+*.pdf
 *.cmxs
 *.cmxa
