@@ -129,7 +129,7 @@ let rec filter f l =
 let rec custom_fold comb base xs=
   match xs with
   [] -> base
-  | hd::tl -> comb hd tl (fold comb base);;
+  | hd::tl -> comb hd tl (custom_fold comb base);;
 (*************************************************************
  *
  * QUESTION 4
@@ -156,10 +156,18 @@ let explode str =
   in
     acc(String.length(str)-1, [])
 
-let implode cs = 
-  let str = String.create(List.length(cs))
-  in (List.iteri (fun i c -> String.set str i c) cs; str)
+let implode (cs) = 
+  let str = String.create(List.length(cs)) in
+  let rec loop (cs,index) = 
+  match cs with
+  [] -> str
+  | c::cs -> (String.set str index c; loop(cs,index+1))
+in
+loop(cs,0)
 
+exception DFAError of string
+
+exception Unimplemented of string
 
 (* 
  * The type for a DFA, parameterized by the type for the states 
@@ -337,9 +345,7 @@ Solutions begin here
 (* Problem 1 *)
 (* Part a *)
 let atLeast mini func xs = 
-  fold_right (fun x y -> 1 + y) (
-      filter func xs
-    ) 0);;
+  fold_right (fun x y -> 1 + y) (filter func xs) 0;;
 
 (* Part b *)
 let maxL xs = fold_right (fun x y -> if x > y then x else y) (map (fun x -> Some x) xs) None;;
@@ -403,6 +409,7 @@ let inject a bs = fold_right (fun x y -> ((remove_elements x bs)@[a]@x)::y) (suf
 
 (* Part d *)
 let get_unique xs = custom_fold (fun x y z -> [x] @ (z (remove_elements [x] y))) [] xs;;
+
 let perms xs = get_unique (filter (fun x -> size x == size xs) (custom_fold (fun x y z -> (fold_right (fun a b -> (inject x a) @ b) (z y) [[x]])) [[]] xs));;
 
 (* Problem 4 *)

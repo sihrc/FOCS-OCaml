@@ -2,7 +2,7 @@
 Chris Lee
 christopher.lee@students.olin.edu
 
-Assignment 3
+Assignment 4
 
 #use "lee_chris_hw4.ml";;
 *)
@@ -91,7 +91,7 @@ type 'a pda = {states : 'a list;
 
 
 let option2List a = 
-	match a with
+		match a with
 	None -> []
 	|Some a -> [a];;
 
