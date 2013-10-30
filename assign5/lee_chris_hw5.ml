@@ -99,7 +99,7 @@ end = struct
   type t = string * symbol list
   let mk s sl =
     match sl with
-    | [] -> fail "Trying to create epsilon rule!"
+    | [] -> (s,sl)
     | _ -> (s,sl)
   let get r = r
   let strS (s) = "\""^s^"\""
@@ -150,31 +150,21 @@ let found w =
 
 
 (* PROVIDE CODE FOR THIS FUNCTION FOR QUESTION 2 *)
-
-let rec miniStep f xs before = 
-  match xs with
+let rec getTuples preffix suffix =
+  match suffix with
   [] -> []
-  |hd::tl -> (before@(f hd)@tl)::(miniStep f tl (before@[hd]));;
+  |hd::tl -> (preffix,hd,tl)::(getTuples (preffix@[hd]) tl);;
 
-let rec remDup xs =
-  match xs with
-  [] -> []
-  |hd::tl -> if (List.exists (fun x -> x = hd) tl) then remDup tl else hd::(remDup tl);;
+let stepRule rules syms =
+List.fold_right 
+  (fun tup tups -> 
+    match tup with 
+      (p,c,s) ->
+      let ruleList = (List.fold_right (fun x y -> match get_rule x with (prev,next) -> if c = (N prev) then next::y else y) rules []) in
+      (List.map (fun rep -> (p@rep@s)) ruleList)@tups) 
+  (getTuples [] syms) [];;
 
-let step cfgNE syms = 
-  (* list of results*)
-  remDup  (List.filter (fun x -> not (x = syms)) (List.flatten
-  (*list of list of results*)
-  (List.map (fun sym1 -> 
-    (* list of results*)
-    match sym1 with T a -> []|N nonterm ->
-    List.fold_right (fun x y -> (miniStep (fun sym2 -> match sym2 with T a -> [T a]|N nonterm2 -> 
-      if nonterm = nonterm2 then x else [N nonterm2]) syms [])@y) 
-    (* list of list of steps*)
-    (List.fold_right (fun x y -> match get_rule x with (prev,next) -> if prev = nonterm then next::y else y) cfgNE.rules_ne []) []
-    ) syms)));;
-
-
+let step cfgNE syms = stepRule cfgNE.rules_ne syms;;
 
 
 (* Function to search the derivation tree for a sequence of terminals
@@ -276,14 +266,20 @@ let anbnbmamcp = { nonterms = ["Start"; "A"; "B"; "C"];
 		           
 
 (* PROVIDE CODE FOR THIS FUNCTION FOR QUESTION 5 *)
-let share l1 l2 = List.fold_right (fun x y -> (List.exists (fun z -> z = x) l2)||y) l1 false;;
+let same l1 l2 = (List.fold_right (fun x y -> (List.exists (fun z -> z = x) l2)&&y) l1 true)&&(List.fold_right (fun x y -> (List.exists (fun z -> z = x) l1)&&y) l2 true);;
+let rem_dups l1 = List.fold_right (fun x y -> if List.exists (fun z -> z = x) y then y else x::y) l1 [];;
+
+let rec checkRules rules = 
+  let new_rules = 
+  match List.partition (fun rule -> match rule with (prev,next) -> next = []) rules with 
+    (epsil, nonepsil) -> rem_dups(epsil@nonepsil@
+      (List.fold_right (fun s ss -> match s with (prev,next) -> 
+        List.map (fun x -> (prev,x))(stepRule (List.map (fun x -> match x with (prev,next) -> mk_rule prev next) epsil) next)@ss)
+      nonepsil [])) in
+  if rules = new_rules then new_rules else checkRules new_rules;;
 
 let eliminate_epsilon_rules cfg = 
-  let new_rules = 
-  match (List.partition (fun rule -> match rule with (str, syml) -> syml = []) cfg.rules) with 
-    (eprod, prod) ->  let stre = (List.map (fun e -> match e with (stre, _) -> N stre) eprod) in
-    List.fold_right (fun p ps -> match p with (strp, symlp) -> if (share symlp stre) then (strp, List.filter (fun x -> not (share [x] stre)) symlp)::p::ps else p::ps) prod []
-  in 
+  let new_rules = checkRules cfg.rules in 
   {nonterms_ne = cfg.nonterms;
   terms_ne = cfg.terms;
   gen_empty_ne = List.exists (fun x -> match x with (s,l) -> s = (cfg.start) && (l = [])) new_rules;
