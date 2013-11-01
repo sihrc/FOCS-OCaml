@@ -281,8 +281,8 @@ let rec checkRules rules =
 let eliminate_epsilon_rules cfg = 
   let new_rules = checkRules cfg.rules in 
   {nonterms_ne = cfg.nonterms;
-  terms_ne = cfg.terms;
-  gen_empty_ne = List.exists (fun x -> match x with (s,l) -> s = (cfg.start) && (l = [])) new_rules;
-  rules_ne = List.map (fun x -> match x with (s, l) -> mk_rule s l) (List.filter (fun x -> match x with (s,l) -> l != []) new_rules);
-  start_ne = cfg.start
+    terms_ne = cfg.terms;
+    gen_empty_ne = List.exists (fun x -> match x with (s,l) -> s = (cfg.start) && (l = [])) new_rules;
+    rules_ne = List.map (fun x -> match x with (s, l) -> mk_rule s l) (List.filter (fun x -> match x with (s,l) -> l != []) new_rules);
+    start_ne = cfg.start
   };;
