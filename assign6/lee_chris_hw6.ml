@@ -29,8 +29,6 @@ let implode (cs) =
   let str = String.create(List.length(cs))  in
   (List.iteri (String.set str) cs; str)
 
-
-
 (*
  * Type for deterministic Turing machines
  *
@@ -62,8 +60,6 @@ let print_config m (u,q,v) =
     (List.iteri put cs; str)  in
   Printf.printf "  %s(%s) %s\n" (string u) q (string v)
 
-
-
 (*
  * IMPLEMENT THE FOLLOWING FUNCTIONS FOR QUESTION 2
  *
@@ -82,10 +78,6 @@ let step_config m c =
 		match (m.delta (state, List.hd suf)) with 
 		(state, newchar, Right) -> let l = if (List.length suf) <= 1 then [m.blank] else List.tl suf in (pre@[newchar],state,l)
 		|(state,newchar,Left) -> let rev = List.rev pre in (List.rev (List.tl rev), state, (List.hd rev)::suf);;
-
-
-
-
 
 let rec step_through m c = 
 	print_config m c;
@@ -267,17 +259,14 @@ let asThenBs =
  * IMPLEMENT THE FOLLOWING FUNCTIONS FOR QUESTION 3
  *
  *)
-
-let getReject trans alpha = 
-	(* NEED TO FINISH *)
-	let ftrans = List.filter (fun x -> match x with (a,_,b) -> a = b) trans in
-	List.map (fun a -> List.filter (fun x -> match x with (_,c,_) -> c = a) ftrans) alpha
-
+let reject_state trans alphabet = 
+	let x = List.filter (fun tran -> match tran with (a,_,b) -> a = b) trans in
+	List.hd (List.fold_right (fun x xs -> if List.length(List.filter (fun z -> match z with (_,y,_) -> y = x)) = 3 then x else xs) trans []);;
 
 let turing_DFA dfa = 
 	let dfunc (q,a) = 
 		match (q,a) with 
-		(* () -> FAIL FAIL TO DO THIS PART! *)
+		->
 
 	in
 	{
