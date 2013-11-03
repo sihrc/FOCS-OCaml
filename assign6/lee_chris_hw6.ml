@@ -1,10 +1,11 @@
-(* 
+	(* 
 Chris Lee
 christopher.lee@students.olin.edu
 
 Assignment 5
 
 #use "lee_chris_hw6.ml";;
+ run (binary_sum ()) ""
  *)
 
 
@@ -74,10 +75,10 @@ let rejecting_config m c = match c with (_,q,_) -> q = m.reject;;
 let halting_config m c = accepting_config m c || rejecting_config m c;;
 
 let step_config m c =
-	match c with (pre, state, suf) -> 
-		match (m.delta (state, List.hd suf)) with 
-		(state, newchar, Right) -> let l = if (List.length suf) <= 1 then [m.blank] else List.tl suf in (pre@[newchar],state,l)
-		|(state,newchar,Left) -> let rev = List.rev pre in (List.rev (List.tl rev), state, (List.hd rev)::suf);;
+	match c with (pre, prevState, suf) ->
+		match (m.delta (prevState,List.hd suf)) with
+			(newState, newchar, Right) -> let l = if (List.length suf) <= 1 then [m.blank] else List.tl suf in (pre@[newchar],newState,l)
+			|(newState, newchar, Left) -> let rev= List.rev pre in (List.rev (List.tl rev), newState, (List.hd rev)::newchar::(List.tl suf));;
 
 let rec step_through m c = 
 	print_config m c;
@@ -259,31 +260,169 @@ let asThenBs =
  * IMPLEMENT THE FOLLOWING FUNCTIONS FOR QUESTION 3
  *
  *)
-let reject_state trans alphabet = 
-	let x = List.filter (fun tran -> match tran with (a,_,b) -> a = b) trans in
-	List.hd (List.fold_right (fun x xs -> if List.length(List.filter (fun z -> match z with (_,y,_) -> y = x)) = 3 then x else xs) trans []);;
 
-let turing_DFA dfa = 
-	let dfunc (q,a) = 
-		match (q,a) with 
-		->
+let reject_state dfa = 
+	let deltas = List.filter (fun delta -> match delta with (s,_,s') -> s = s') dfa.delta_d in
+	let all = List.flatten (List.map (fun alpha -> List.fold_right (fun x xs -> match x with (q,s,_) -> if s = alpha then q::xs else xs) deltas []) dfa.alphabet_d) in
+	List.filter (fun x -> List.length (List.filter (fun a -> a = x) all) = List.length dfa.alphabet_d) dfa.states_d;;
 
-	in
+let add_epsilon dfa =
+	let rejs = reject_state dfa in
+	dfa.delta_d
+	@(List.map (fun x -> (x,'_',"acc")) dfa.final_d)
+	@(List.map (fun x -> ("acc",x,"acc")) dfa.alphabet_d)
+	@(List.map (fun x -> (x, '_', "rej")) rejs);;
+	
+
+
+let rec turing_delta deltas (state,symbol) = 
+	match deltas with 
+	[] -> (state,symbol,Right)
+	|(q1,s,q2)::tl -> if (q1 = state && s = symbol) then (q2,symbol,Right) else turing_delta tl (state,symbol);;
+
+
+
+ let turing_DFA dfa = 
+	{	
+		states = "acc"::"rej"::dfa.states_d;
+		input_alph = dfa.alphabet_d;
+		tape_alph = '_'::'>'::dfa.alphabet_d;
+		leftmost = '>';
+		blank = '_';
+		delta = turing_delta (add_epsilon dfa);
+		start = dfa.start_d;
+		accept = "acc";
+		reject = "rej";
+	};;
+
+let binary_sum () = 
 	{
-		states: dfa.states_d;
-		input_alph: dfa.alphabet_d;
-		tape_alph: dfa.alphabet_d;
-		leftmost: '>';
-		blank: '_';
-		delta: dfunc;
-		start: dfa.start_d;
-		accept: dfa.final_d;
-		reject: getReject dfa.delta_d
-	}
+		states = ["11w3"; "cback"; "01n3"; "00wc3"; "11n3"; "11wc3"; "00n3"; "q1"; "1c2"; "q3"; "q2"; "q5"; "q4"; "0c2"; "10c3"; "01wc3"; "10wc3"; "rej"; "start"; "00w3"; "11c3"; "01w3"; "0w2"; "1n2"; "0n2"; "10n3"; "nback"; "1wc2"; "1w2"; "acc"; "c"; "10w3"; "n"; "0wc2"; "01c3"; "00c3"];
+		input_alph = ['0';'1';'#'];
+		tape_alph = ['0';'1';'#';'>';'_'];
+		leftmost = '>';
+		blank = '_';
+		start = "start";
+		accept = "acc";
+		reject = "rej";
+		delta = fun (q,a) -> match (q,a) with 
+		| ("start", '>') -> ("start",'<',Right)
+		| ("start", '0') -> ("q1",'0',Right)
+		| ("start", '1') -> ("q1",'1',Right)
+		| ("start", sym) -> ("rej",sym,Right)
+		| ("q1", '0') -> ("q1",'0',Right)
+		| ("q1", '1') -> ("q1",'1',Right)
+		| ("q1", '#') -> ("q2",'#',Right)
+		| ("q1", sym) -> ("rej",sym,Right)
+		| ("q2", '0') -> ("q3",'0',Right)
+		| ("q2", '1') -> ("q3",'1',Right)
+		| ("q2", sym) -> ("rej",sym,Right)
+		| ("q3", '0') -> ("q3",'0',Right)
+		| ("q3", '1') -> ("q3",'1',Right)
+		| ("q3", '#') -> ("q4",'#',Right)
+		| ("q3", sym) -> ("rej",sym,Right)
+		| ("q4", '0') -> ("q5",'0',Right)
+		| ("q4", '1') -> ("q5",'1',Right)
+		| ("q4", sym) -> ("rej",sym,Right)
+		| ("q5", '0') -> ("q5",'0',Right)
+		| ("q5", '1') -> ("q5",'1',Right)
+		| ("q5", '_') -> ("n",'_',Left)
+		| ("q5", sym) -> ("rej",sym,Right)
+		| ("n", '0') -> ("0w2",'_', Left) 
+		| ("n", '1') -> ("1w2",'_', Left)
+		| ("n", '#') -> ("acc",'#', Left)
+		| ("n", '_') -> ("n",'_', Left)
+		| ("n", sym) -> ("rej",sym, Right)
+		| ("0w2", '0') -> ("0w2",'0', Left) 
+		| ("0w2", '1') -> ("0w2",'1', Left)
+		| ("0w2", '#') -> ("0n2",'#', Left)
+		| ("0w2", sym) -> ("rej",sym, Right)
+		| ("1w2", '0') -> ("1w2",'0', Left) 
+		| ("1w2", '1') -> ("1w2",'1', Left)
+		| ("1w2", '#') -> ("1n2",'#', Left)
+		| ("1w2", sym) -> ("rej",sym, Right)
+		| ("0n2", '0') -> ("00w3",'#',Left)
+		| ("0n2", '1') -> ("01w3",'#',Left)
+		| ("0n2", sym) -> ("rej",sym, Right)
+		| ("1n2", '0') -> ("10w3",'#',Left)
+		| ("1n2", '1') -> ("11w3",'#',Left)
+		| ("1n2", sym) -> ("rej",sym, Right)
+		| ("00w3", '0') -> ("00w3",'0', Left) 
+		| ("00w3", '1') -> ("00w3",'1', Left)
+		| ("00w3", '#') -> ("00n3",'#', Left)
+		| ("00w3", sym) -> ("rej",sym, Right)
+		| ("01w3", '0') -> ("01w3",'0', Left) 
+		| ("01w3", '1') -> ("01w3",'1', Left)
+		| ("01w3", '#') -> ("01n3",'#', Left)
+		| ("01w3", sym) -> ("rej",sym, Right)
+		| ("10w3", '0') -> ("10w3",'0', Left) 
+		| ("10w3", '1') -> ("10w3",'1', Left)
+		| ("10w3", '#') -> ("10n3",'#', Left)
+		| ("10w3", sym) -> ("rej",sym, Right)
+		| ("11w3", '0') -> ("11w3",'0', Left) 
+		| ("11w3", '1') -> ("11w3",'1', Left)
+		| ("11w3", '#') -> ("11n3",'#', Left)
+		| ("11w3", sym) -> ("rej",sym, Right)
+		| ("00n3", '0') -> ("nback",'#',Left)
+		| ("00n3", sym) -> ("rej",sym, Right)
+		| ("01n3", '1') -> ("nback",'#',Left)
+		| ("01n3", sym) -> ("rej",sym, Right)
+		| ("10n3", '1') -> ("cback",'#',Left)
+		| ("10n3", sym) -> ("rej",sym, Right)
+		| ("11n3", '0') -> ("nback",'#',Left)
+		| ("11n3", sym) -> ("rej",sym, Right)
+		| ("c", '0') -> ("0wc2",'_', Left) 
+		| ("c", '1') -> ("1wc2",'_', Left)
+		| ("c", '#') -> ("acc",'#', Left)
+		| ("c", '_') -> ("c",'_', Left)
+		| ("c", sym) -> ("rej",sym, Right)
+		| ("0wc2", '0') -> ("0wc2",'0', Left) 
+		| ("0wc2", '1') -> ("0wc2",'1', Left)
+		| ("0wc2", '#') -> ("0c2",'#', Left)
+		| ("0wc2", sym) -> ("rej",sym, Right)
+		| ("1wc2", '0') -> ("1wc2",'0', Left) 
+		| ("1wc2", '1') -> ("1wc2",'1', Left)
+		| ("1wc2", '#') -> ("1c2",'#', Left)
+		| ("1wc2", sym) -> ("rej",sym, Right)
+		| ("0c2", '0') -> ("00wc3",'#',Left)
+		| ("0c2", '1') -> ("01wc3",'#',Left)
+		| ("0c2", sym) -> ("rej",sym, Right)
+		| ("1c2", '0') -> ("10wc3",'#',Left)
+		| ("1c2", '1') -> ("11wc3",'#',Left)
+		| ("1c2", sym) -> ("rej",sym, Right)
+		| ("00wc3", '0') -> ("00wc3",'0', Left) 
+		| ("00wc3", '1') -> ("00wc3",'1', Left)
+		| ("00wc3", '#') -> ("00c3",'#', Left)
+		| ("00wc3", sym) -> ("rej",sym, Right)
+		| ("01wc3", '0') -> ("01wc3",'0', Left) 
+		| ("01wc3", '1') -> ("01wc3",'1', Left)
+		| ("01wc3", '#') -> ("01c3",'#', Left)
+		| ("01wc3", sym) -> ("rej",sym, Right)
+		| ("10wc3", '0') -> ("10wc3",'0', Left) 
+		| ("10wc3", '1') -> ("10wc3",'1', Left)
+		| ("10wc3", '#') -> ("10c3",'#', Left)
+		| ("10wc3", sym) -> ("rej",sym, Right)
+		| ("11wc3", '0') -> ("11wc3",'0', Left) 
+		| ("11wc3", '1') -> ("11wc3",'1', Left)
+		| ("11wc3", '#') -> ("11c3",'#', Left)
+		| ("11wc3", sym) -> ("rej",sym, Right)
+		| ("00c3", '1') -> ("nback",'#',Left)
+		| ("00c3", sym) -> ("rej",sym, Right)
+		| ("01c3", '0') -> ("nback",'#',Left)
+		| ("01c3", sym) -> ("rej",sym, Right)
+		| ("10c3", '0') -> ("cback",'#',Left)
+		| ("10c3", sym) -> ("rej",sym, Right)
+		| ("11c3", '1') -> ("cback",'#',Left)
+		| ("11c3", sym) -> ("rej",sym, Right)
+		| ("nback", '_') -> ("n",'_',Left)
+		| ("nback", sym) -> ("nback",sym,Right)
+		| ("cback", '_') -> ("c",'_',Left)
+		| ("cback", sym) -> ("nback",sym,Right)
+		| ("rej", sym) -> ("rej",sym, Right)
+		| ("acc", sym) -> ("acc",sym, Right)
+		| _ -> fail "Undefined transition"}
 
-let binary_sum () = fail "Function binary_sum not implemented"
-
-
+(* 
 type 'a turing = { states : 'a list;
 		   input_alph : char list;
 		   tape_alph : char list;
@@ -298,6 +437,6 @@ type 'a dfa = {states_d :   'a list;
    alphabet_d : char list;
 	start_d :    'a;
    delta_d :    ('a * char * 'a) list;
-	final_d :    'a list}
+	final_d :    'a list} *)
 
 
