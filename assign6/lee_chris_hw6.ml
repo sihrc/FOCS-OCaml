@@ -1,4 +1,4 @@
-	(* 
+(* 
 Chris Lee
 christopher.lee@students.olin.edu
 
@@ -80,7 +80,7 @@ let step_config m c =
 			(q2, c, Right) -> let next = if (List.length s) = 1 then [m.blank] else (List.tl s) in
 							(p@[c], q2, next)
 			|(q2, c, Left) -> let before = List.rev p in
-							(List.rev (List.tl before), q2, (List.hd before)::c::(List.tl s));;
+							(List.rev (List.tl before), q2, (List.hd before)::c::(List.tl s));;	
 
 let rec step_through m c = 
 	print_config m c;
@@ -297,6 +297,14 @@ let rec turing_delta deltas (state,symbol) =
 		reject = "rej";
 	};;
 
+let run m w = 
+	let res = accepting_config m (step_through m (starting_config m w)) in
+	if res then
+		Printf.printf "Accepting %s\n" w
+	else
+		Printf.printf "Rejecting %s\n" w; 
+	res;;
+
 let binary_sum () = 
 	{
 		states = ["11w3"; "cback"; "01n3"; "00wc3"; "11n3"; "11wc3"; "00n3"; "q1"; "1c2"; "q3"; "q2"; "q5"; "q4"; "0c2"; "10c3"; "01wc3"; "10wc3"; "rej"; "start"; "00w3"; "11c3"; "01w3"; "0w2"; "1n2"; "0n2"; "10n3"; "nback"; "1wc2"; "1w2"; "acc"; "c"; "10w3"; "n"; "0wc2"; "01c3"; "00c3"];
@@ -332,7 +340,8 @@ let binary_sum () =
 		| ("q5", sym) -> ("rej",sym,Right)
 		| ("n", '0') -> ("0w2",'_', Left) 
 		| ("n", '1') -> ("1w2",'_', Left)
-		| ("n", '#') -> ("acc",'#', Left)
+		| ("n", '#') -> ("n",'#', Left)
+		| ("n", '<') -> ("acc",'<', Right)
 		| ("n", '_') -> ("n",'_', Left)
 		| ("n", sym) -> ("rej",sym, Right)
 		| ("0w2", '0') -> ("0w2",'0', Left) 
@@ -371,7 +380,7 @@ let binary_sum () =
 		| ("00n3", '#') -> ("00n3",'#',Left)
 		| ("00n3", '>') -> ("nback",'>',Right)
 		| ("00n3", sym) -> ("rej",sym, Right)
-		| ("01n3", '1') -> ("cback",'#',Left)
+		| ("01n3", '1') -> ("nback",'#',Left)
 		| ("01n3", '#') -> ("01n3",'#',Left)
 		| ("01n3", '>') -> ("nback",'>',Right)
 		| ("01n3", sym) -> ("rej",sym, Right)
@@ -379,13 +388,14 @@ let binary_sum () =
 		| ("10n3", '#') -> ("10n3",'#',Left)
 		| ("10n3", '>') -> ("nback",'>',Right)
 		| ("10n3", sym) -> ("rej",sym, Right)
-		| ("11n3", '0') -> ("nback",'#',Left)
+		| ("11n3", '0') -> ("cback",'#',Left)
 		| ("11n3", '#') -> ("11n3",'#',Left)
 		| ("11n3", '>') -> ("nback",'>',Right)
 		| ("11n3", sym) -> ("rej",sym, Right)
 		| ("c", '0') -> ("0wc2",'_', Left) 
 		| ("c", '1') -> ("1wc2",'_', Left)
-		| ("c", '#') -> ("acc",'#', Left)
+		| ("c", '#') -> ("c",'#', Left)
+		| ("c", '>') -> ("rej",'>', Right)
 		| ("c", '_') -> ("c",'_', Left)
 		| ("c", sym) -> ("rej",sym, Right)
 		| ("0wc2", '0') -> ("0wc2",'0', Left) 
@@ -420,15 +430,15 @@ let binary_sum () =
 		| ("11wc3", '1') -> ("11wc3",'1', Left)
 		| ("11wc3", '#') -> ("11c3",'#', Left)
 		| ("11wc3", sym) -> ("rej",sym, Right)
-		| ("00c3", '1') -> ("cback",'#',Left)
+		| ("00c3", '1') -> ("nback",'#',Left)
 		| ("00c3", '>') -> ("nback",'>',Right)
 		| ("00c3", '#') -> ("00c3",'#',Left)
 		| ("00c3", sym) -> ("rej",sym, Right)
-		| ("01c3", '0') -> ("nback",'#',Left)
+		| ("01c3", '0') -> ("cback",'#',Left)
 		| ("01c3", '>') -> ("nback",'>',Right)
 		| ("01c3", '#') -> ("01c3",'#',Left)
 		| ("01c3", sym) -> ("rej",sym, Right)
-		| ("10c3", '0') -> ("nback",'#',Left)
+		| ("10c3", '0') -> ("cback",'#',Left)
 		| ("10c3", '>') -> ("nback",'>',Right)
 		| ("10c3", '#') -> ("10c3",'#',Left)
 		| ("10c3", sym) -> ("rej",sym, Right)
