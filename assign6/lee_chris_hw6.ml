@@ -455,21 +455,3 @@ let binary_sum () =
 		| ("acc", sym) -> ("acc",sym, Right)
 		| _ -> fail "Undefined transition"}
 
-(* 
-type 'a turing = { states : 'a list;
-		   input_alph : char list;
-		   tape_alph : char list;
-		   leftmost : char;
-		   blank : char;
-		   delta : ('a * char) -> ('a * char * direction);
-		   start : 'a;
-		   accept : 'a;
-		   reject : 'a }
-
-type 'a dfa = {states_d :   'a list;
-   alphabet_d : char list;
-	start_d :    'a;
-   delta_d :    ('a * char * 'a) list;
-	final_d :    'a list} *)
-
-
