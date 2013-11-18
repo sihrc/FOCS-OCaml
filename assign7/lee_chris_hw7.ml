@@ -624,7 +624,7 @@ type direction_S = L | R | S
 
 type 'a tm_desc_S = { states_S : 'a list;
 					input_alph_S : symbol list;
-						tape_alph_S : symbol list;
+					tape_alph_S : symbol list;
 					leftmost_S : symbol;
 					blank_S : symbol;
 					delta_S : (('a * symbol) -> ('a * symbol * direction_S));
@@ -651,7 +651,11 @@ let transf_delta m (st,sym) =
 		
 
 let build_S string_of_state m = 
-		TM.build string_of_state { 
+	let stringify st = match st with 
+		|(a, Some b) -> (string_of_state a)^"|"^(string_of_state b)
+		|(a, None) -> (string_of_state a)
+	in
+	TM.build stringify { 
 		states = transf_states m;
 		input_alph = m.input_alph_S;
 		tape_alph = m.tape_alph_S;
